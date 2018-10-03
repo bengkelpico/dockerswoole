@@ -1,0 +1,38 @@
+version: "3"
+services:
+  traefik:
+    build: ./traefik # The official Traefik docker image
+    command: --api --docker # Enables the web UI and tells Træfik to listen to docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+    labels:
+      - "traefik.frontend.rule=Host:traefik.test"
+      - "traefik.port=8080"
+    ports:
+      - 80:80
+      - 8080:8080
+  redis:
+    build: ./redis
+    volumes:
+      - redis:/data
+  swoole:
+    build: ./swoole
+    volumes:
+      - ./sites/keepo:/www
+    labels:
+      - "traefik.frontend.rule=Host:keepo.test"
+      - "traefik.port=1215"
+    depends_on:
+      - redis
+    extra_hosts:
+      - "keepo.test:192.168.100.137"
+      - "media.keepo.loc:172.16.1.100"
+volumes:
+  redis:
+    driver: "local"
+  mariadb:
+    driver: "local"
+networks:
+  default:
+    external:
+      name: picobug
